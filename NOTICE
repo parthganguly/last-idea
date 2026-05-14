@@ -1,0 +1,7 @@
+Last Idea is an open-source Markdown idea catcher rebuilt from the supplied
+legacy APK assets.
+
+This project does not bundle proprietary app code, legacy ad SDK identifiers,
+network dependencies, plaintext password storage, or rules text from that app.
+The included visual/font assets came from the supplied APK archive and should be
+redistributed only where the project has the rights to do so.

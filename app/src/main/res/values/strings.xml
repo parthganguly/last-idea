@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Last Idea</string>
+    <string name="setting_show_guide">Show guide item</string>
+    <string name="setting_auto_lock">Auto lock after 15 seconds away</string>
+</resources>
