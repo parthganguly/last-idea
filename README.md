@@ -17,7 +17,8 @@ ornate borders and skull treatment were removed from the active UI.
 - Markdown pages saved as `page-000001.md`, `page-000002.md`, and so on
 - Folder/category index for grouping ideas
 - Tap `Last Idea` at the top of a page to open the index
-- Long-press an idea in the index to move it to another folder
+- Long-press an idea in the index to open, move, or delete it
+- Long-press a folder heading or shortcut to delete that folder and its Markdown files
 - Autosave after 1 second of idle typing
 - Immediate save when the app pauses
 - Index page with saved idea titles

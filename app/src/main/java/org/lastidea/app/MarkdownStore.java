@@ -90,7 +90,7 @@ final class MarkdownStore {
         if (isDrive()) {
             return readDrivePage(category, page);
         }
-        File file = pageFile(category, page);
+        File file = new File(categoryDirectory(category, false), pageName(page));
         if (!file.exists()) {
             return "";
         }
@@ -106,7 +106,7 @@ final class MarkdownStore {
             saveDrivePage(category, page, markdown);
             return;
         }
-        File file = pageFile(category, page);
+        File file = new File(categoryDirectory(category, false), pageName(page));
         if (TextUtils.isEmpty(markdown) || TextUtils.isEmpty(markdown.trim())) {
             if (file.exists()) {
                 file.delete();
@@ -167,6 +167,34 @@ final class MarkdownStore {
         savePage(toCategory, destinationPage, markdown);
         savePage(fromCategory, page, "");
         return destinationPage;
+    }
+
+    boolean deletePage(String category, int page) {
+        if (isDrive()) {
+            return deleteDrivePage(category, page);
+        }
+        File file = pageFile(category, page);
+        return !file.exists() || file.delete();
+    }
+
+    boolean deleteCategory(String category) {
+        String normalized = normalizeCategory(category);
+        if (TextUtils.isEmpty(normalized)) {
+            return false;
+        }
+        if (isDrive()) {
+            String documentId = driveCategoryDocId(normalized, false);
+            if (TextUtils.isEmpty(documentId)) {
+                return true;
+            }
+            return deleteDriveDocument(documentId);
+        }
+        File dir = categoryDirectory(normalized, false);
+        if (!dir.exists()) {
+            return true;
+        }
+        deleteLocalFiles(dir);
+        return dir.delete();
     }
 
     void wipe() {
@@ -455,6 +483,15 @@ final class MarkdownStore {
         }
     }
 
+    private boolean deleteDrivePage(String category, int page) {
+        String categoryDocId = driveCategoryDocId(category, false);
+        if (TextUtils.isEmpty(categoryDocId)) {
+            return true;
+        }
+        String docId = findDriveChild(categoryDocId, pageName(page), null);
+        return TextUtils.isEmpty(docId) || deleteDriveDocument(docId);
+    }
+
     private String readFromUri(Uri uri) {
         try (InputStream input = resolver.openInputStream(uri);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
@@ -472,10 +509,11 @@ final class MarkdownStore {
         }
     }
 
-    private void deleteDriveDocument(String documentId) {
+    private boolean deleteDriveDocument(String documentId) {
         try {
-            DocumentsContract.deleteDocument(resolver, documentUri(documentId));
+            return DocumentsContract.deleteDocument(resolver, documentUri(documentId));
         } catch (Exception ignored) {
+            return false;
         }
     }
 

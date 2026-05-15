@@ -646,6 +646,12 @@ public final class MainActivity extends Activity {
         shortcut.setGravity(Gravity.CENTER_VERTICAL);
         shortcut.setBackground(rounded(colors.card, 10, colors.border, 1));
         shortcut.setOnClickListener(view -> switchCategory(category));
+        if (!TextUtils.isEmpty(category)) {
+            shortcut.setOnLongClickListener(view -> {
+                showFolderActions(category);
+                return true;
+            });
+        }
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(44));
@@ -671,6 +677,12 @@ public final class MainActivity extends Activity {
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(dp(2), dp(18), dp(2), dp(8));
         header.setOnClickListener(view -> switchCategory(category));
+        if (!TextUtils.isEmpty(category)) {
+            header.setOnLongClickListener(view -> {
+                showFolderActions(category);
+                return true;
+            });
+        }
 
         View marker = new View(this);
         marker.setBackground(rounded(active ? colors.accentCrimson : colors.accentBronze, 4, Color.TRANSPARENT, 0));
@@ -718,7 +730,7 @@ public final class MainActivity extends Activity {
         card.setElevation(dp(3));
         card.setOnClickListener(view -> showPage(page.category, page.page));
         card.setOnLongClickListener(view -> {
-            showMoveDialog(page);
+            showIdeaActions(page);
             return true;
         });
 
@@ -1045,6 +1057,36 @@ public final class MainActivity extends Activity {
         showIndex();
     }
 
+    private void showIdeaActions(PageInfo page) {
+        String[] actions = {"Open", "Move", "Delete"};
+        new AlertDialog.Builder(this)
+                .setTitle(page.title)
+                .setItems(actions, (dialog, which) -> {
+                    if (which == 0) {
+                        showPage(page.category, page.page);
+                    } else if (which == 1) {
+                        showMoveDialog(page);
+                    } else {
+                        confirmDeletePage(page);
+                    }
+                })
+                .show();
+    }
+
+    private void showFolderActions(String category) {
+        String[] actions = {"Open folder", "Delete folder"};
+        new AlertDialog.Builder(this)
+                .setTitle(store.displayCategory(category))
+                .setItems(actions, (dialog, which) -> {
+                    if (which == 0) {
+                        switchCategory(category);
+                    } else {
+                        confirmDeleteCategory(category);
+                    }
+                })
+                .show();
+    }
+
     private void showMoveDialog(PageInfo page) {
         List<String> targets = store.listCategories();
         targets.add(0, MarkdownStore.ROOT_CATEGORY);
@@ -1069,6 +1111,45 @@ public final class MainActivity extends Activity {
                         Toast.makeText(this, "Move failed", Toast.LENGTH_SHORT).show();
                     }
                 })
+                .show();
+    }
+
+    private void confirmDeletePage(PageInfo page) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete idea")
+                .setMessage("Delete " + pageFileLabel(page.page) + " from " + store.displayCategory(page.category) + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    if (store.deletePage(page.category, page.page)) {
+                        if (page.category.equals(currentCategory) && page.page == currentPage) {
+                            pendingMarkdown = "";
+                        }
+                        Toast.makeText(this, "Idea deleted", Toast.LENGTH_SHORT).show();
+                        showIndex();
+                    } else {
+                        Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void confirmDeleteCategory(String category) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete folder")
+                .setMessage("Delete " + store.displayCategory(category) + " and all Markdown files inside it?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    if (store.deleteCategory(category)) {
+                        if (category.equals(currentCategory)) {
+                            currentCategory = MarkdownStore.ROOT_CATEGORY;
+                            settings.setCurrentCategory(currentCategory);
+                        }
+                        Toast.makeText(this, "Folder deleted", Toast.LENGTH_SHORT).show();
+                        showIndex();
+                    } else {
+                        Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -1190,7 +1271,7 @@ public final class MainActivity extends Activity {
     private View pageRow(PageInfo page) {
         View view = row(page.title, page.page, () -> showPage(page.category, page.page));
         view.setOnLongClickListener(row -> {
-            showMoveDialog(page);
+            showIdeaActions(page);
             return true;
         });
         return view;
