@@ -2,6 +2,8 @@
 
 Last Idea is an open-source, local-first Android idea catcher built around speed:
 open, type, leave. Every idea is a plain Markdown file, not an opaque database row.
+The files live on the user's phone/device, or in the folder the user chooses.
+They belong to the user.
 
 The design keeps the old APK's black-paper/white-ink icon assets, uses
 open-licensed EB Garamond as the default app font, and modernizes the first
@@ -16,6 +18,7 @@ ornate borders and skull treatment were removed from the active UI.
 - APK-derived row icons and bundled fonts
 - Markdown pages saved as `page-000001.md`, `page-000002.md`, and so on
 - Folder/category index for grouping ideas
+- Simple local search across titles, previews, folders, and Markdown filenames
 - Tap `Last Idea` at the top of a page to open the index
 - Long-press an idea in the index to open, move, or delete it
 - Long-press a folder heading or shortcut to delete that folder and its Markdown files
@@ -47,6 +50,17 @@ need network permission or a bundled Google API client.
 Android may hide app-specific external folders from some file managers on newer
 releases, but the files are plain UTF-8 Markdown and can be accessed through
 Android tooling, backup flows, or future export/share features.
+
+## Philosophy
+
+Last Idea is intentionally essentialist: fast capture, plain files, no lock-in.
+The app is a small open-source layer over user-owned Markdown. It does not add
+analytics, ads, a proprietary sync account, or a private database format that
+traps notes inside the app.
+
+If the user saves locally, the Markdown lives on the device. If the user chooses
+Google Drive through Android's folder picker, the Markdown lives in that chosen
+folder. In both cases, the notes are the user's files.
 
 ## Build
 

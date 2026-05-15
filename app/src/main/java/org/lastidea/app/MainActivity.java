@@ -35,6 +35,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +58,9 @@ public final class MainActivity extends Activity {
             "- Write in Markdown.\n" +
             "- Swipe left and right between ideas.\n" +
             "- Tap `Last Idea` at the top to open the index.\n" +
-            "- Every idea is saved as a plain `.md` file.\n\n" +
+            "- Search, folder, move, and delete from the index.\n" +
+            "- Every idea is saved as a plain `.md` file.\n" +
+            "- The files live on your device or in the folder you choose. They belong to you.\n\n" +
             "Autosave is already on.";
     private static final String GUIDE_MARKDOWN =
             "# Last Idea guide\n\n" +
@@ -69,9 +72,15 @@ public final class MainActivity extends Activity {
             "- Swipe left to move to the next page.\n" +
             "- Swipe right to move back.\n" +
             "- Tap `Last Idea` at the top to open the index.\n" +
-            "- Create folders from the index to categorize ideas.\n\n" +
+            "- Search from the index to find text across titles, previews, folders, and filenames.\n" +
+            "- Create folders from the index to categorize ideas.\n" +
+            "- Long-press an idea or folder for move and delete actions.\n\n" +
             "## Files\n\n" +
-            "Files can live locally or in a folder you choose through Android's system picker, including Google Drive.";
+            "Your ideas are plain Markdown files. They live on your phone/device, or in the folder " +
+            "you choose through Android's system picker, including Google Drive.\n\n" +
+            "The files belong to you. Last Idea does not add analytics, ads, cloud accounts, or a " +
+            "private database that traps your notes. It is an essential, open-source wrapper around " +
+            "your own `.md` files.";
 
     private static final class ThemePalette {
         final int accentBronze;
@@ -142,6 +151,7 @@ public final class MainActivity extends Activity {
     private Runnable pendingSave;
     private Screen screen = Screen.INDEX;
     private String currentCategory = MarkdownStore.ROOT_CATEGORY;
+    private String indexSearchQuery = "";
     private String pendingMarkdown;
     private int currentPage = 1;
     private int openingCharIndex;
@@ -523,7 +533,7 @@ public final class MainActivity extends Activity {
         content.addView(indexHeader(colors));
         content.addView(actionBoard(colors));
 
-        boolean showingRoot = TextUtils.isEmpty(currentCategory);
+        boolean showingRoot = TextUtils.isEmpty(currentCategory) || isSearching();
         if (showingRoot) {
             addFolderSection(content, MarkdownStore.ROOT_CATEGORY, colors, true);
             for (String category : store.listCategories()) {
@@ -532,6 +542,9 @@ public final class MainActivity extends Activity {
         } else {
             addFolderSection(content, currentCategory, colors, true);
             content.addView(folderShortcutStrip(colors));
+        }
+        if (isSearching() && !hasSearchResults()) {
+            content.addView(noSearchResultsCard(colors));
         }
         return content;
     }
@@ -559,7 +572,11 @@ public final class MainActivity extends Activity {
         header.addView(title, titleParams);
 
         String storage = settings.isDriveStorage() ? "Google Drive" : "Local Markdown";
-        TextView subtitle = text(storage + " / " + store.displayCategory(currentCategory), 13, appTypeface());
+        String subtitleText = storage + " / " + store.displayCategory(currentCategory);
+        if (isSearching()) {
+            subtitleText += " / Search: " + indexSearchQuery;
+        }
+        TextView subtitle = text(subtitleText, 13, appTypeface());
         subtitle.setTextColor(colors.mutedText);
         LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -596,6 +613,10 @@ public final class MainActivity extends Activity {
         actions.addView(firstRow);
 
         LinearLayout secondRow = horizontal();
+        secondRow.addView(actionChip(isSearching() ? "Clear search" : "Search", colors.cardPressed,
+                isSearching() ? this::clearSearch : this::showSearchDialog),
+                new LinearLayout.LayoutParams(0, dp(40), 1f));
+        secondRow.addView(gap(10), new LinearLayout.LayoutParams(dp(10), 1));
         if (settings.isShowGuideEnabled()) {
             secondRow.addView(actionChip("Guide", colors.cardPressed, this::showGuide),
                     new LinearLayout.LayoutParams(0, dp(40), 1f));
@@ -661,7 +682,10 @@ public final class MainActivity extends Activity {
     }
 
     private void addFolderSection(LinearLayout content, String category, ThemePalette colors, boolean active) {
-        List<PageInfo> pages = store.listPages(category);
+        List<PageInfo> pages = filteredPages(category);
+        if (isSearching() && pages.isEmpty() && !categoryMatchesSearch(category)) {
+            return;
+        }
         content.addView(folderSectionHeader(category, pages.size(), colors, active));
         if (pages.isEmpty()) {
             content.addView(emptyFolderCard(category, colors));
@@ -779,6 +803,76 @@ public final class MainActivity extends Activity {
         params.bottomMargin = dp(10);
         card.setLayoutParams(params);
         return card;
+    }
+
+    private List<PageInfo> filteredPages(String category) {
+        List<PageInfo> pages = store.listPages(category);
+        if (!isSearching()) {
+            return pages;
+        }
+        List<PageInfo> filtered = new ArrayList<>();
+        for (PageInfo page : pages) {
+            if (pageMatchesSearch(page)) {
+                filtered.add(page);
+            }
+        }
+        return filtered;
+    }
+
+    private boolean hasSearchResults() {
+        if (!isSearching()) {
+            return true;
+        }
+        if (!filteredPages(MarkdownStore.ROOT_CATEGORY).isEmpty()
+                || categoryMatchesSearch(MarkdownStore.ROOT_CATEGORY)) {
+            return true;
+        }
+        for (String category : store.listCategories()) {
+            if (!filteredPages(category).isEmpty() || categoryMatchesSearch(category)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean pageMatchesSearch(PageInfo page) {
+        String query = normalizedSearch();
+        return containsSearch(page.title, query)
+                || containsSearch(page.preview, query)
+                || containsSearch(store.displayCategory(page.category), query)
+                || containsSearch(pageFileLabel(page.page), query);
+    }
+
+    private boolean categoryMatchesSearch(String category) {
+        return containsSearch(store.displayCategory(category), normalizedSearch());
+    }
+
+    private boolean containsSearch(String value, String query) {
+        return !TextUtils.isEmpty(value)
+                && value.toLowerCase(Locale.getDefault()).contains(query);
+    }
+
+    private boolean isSearching() {
+        return !TextUtils.isEmpty(indexSearchQuery.trim());
+    }
+
+    private String normalizedSearch() {
+        return indexSearchQuery.trim().toLowerCase(Locale.getDefault());
+    }
+
+    private View noSearchResultsCard(ThemePalette colors) {
+        TextView empty = text("No ideas found for \"" + indexSearchQuery.trim() + "\".", 16, appTypeface());
+        empty.setTextColor(colors.mutedText);
+        empty.setGravity(Gravity.CENTER_VERTICAL);
+        empty.setPadding(dp(16), 0, dp(16), 0);
+        empty.setBackground(rounded(colors.card, 12, colors.border, 1));
+        empty.setOnClickListener(view -> clearSearch());
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(58));
+        params.topMargin = dp(14);
+        empty.setLayoutParams(params);
+        return empty;
     }
 
     private String pageFileLabel(int page) {
@@ -1049,6 +1143,31 @@ public final class MainActivity extends Activity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void showSearchDialog() {
+        EditText search = new EditText(this);
+        search.setSingleLine(true);
+        search.setHint("Search ideas");
+        search.setText(indexSearchQuery);
+        search.setSelectAllOnFocus(true);
+        search.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        search.setPadding(dp(20), dp(8), dp(20), dp(8));
+        new AlertDialog.Builder(this)
+                .setTitle("Search")
+                .setView(search)
+                .setPositiveButton("Search", (dialog, which) -> {
+                    indexSearchQuery = search.getText().toString().trim();
+                    showIndex();
+                })
+                .setNeutralButton("Clear", (dialog, which) -> clearSearch())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void clearSearch() {
+        indexSearchQuery = "";
+        showIndex();
     }
 
     private void switchCategory(String category) {
