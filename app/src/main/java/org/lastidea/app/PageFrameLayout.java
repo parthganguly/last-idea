@@ -15,6 +15,11 @@ final class PageFrameLayout extends FrameLayout {
     private final Paint label = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint plate = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF band = new RectF();
+    private int backgroundBottomColor = 0xFF030303;
+    private int backgroundMiddleColor = 0xFF101010;
+    private int backgroundTopColor = 0xFF060606;
+    private int bandGlowColor = 0xFFECECEC;
+    private int labelColor = 0xA8FFFFFF;
 
     PageFrameLayout(Context context) {
         super(context);
@@ -34,11 +39,32 @@ final class PageFrameLayout extends FrameLayout {
         background.setColor(0xFF070707);
         background.setStyle(Paint.Style.FILL);
 
-        label.setColor(0xA8FFFFFF);
+        label.setColor(labelColor);
         label.setTextSize(dp(10));
-        label.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL));
+        label.setTypeface(Typeface.SERIF);
 
         plate.setStyle(Paint.Style.FILL);
+    }
+
+    void setFramePalette(
+            int topColor,
+            int middleColor,
+            int bottomColor,
+            int titleColor,
+            int glowColor) {
+        backgroundTopColor = topColor;
+        backgroundMiddleColor = middleColor;
+        backgroundBottomColor = bottomColor;
+        labelColor = titleColor;
+        bandGlowColor = glowColor;
+        label.setColor(labelColor);
+        setBackgroundColor(bottomColor);
+        invalidate();
+    }
+
+    void setTitleTypeface(Typeface typeface) {
+        label.setTypeface(typeface == null ? Typeface.SERIF : typeface);
+        invalidate();
     }
 
     @Override
@@ -55,7 +81,7 @@ final class PageFrameLayout extends FrameLayout {
                 0,
                 width,
                 height,
-                new int[]{0xFF060606, 0xFF101010, 0xFF030303},
+                new int[]{backgroundTopColor, backgroundMiddleColor, backgroundBottomColor},
                 new float[]{0f, 0.48f, 1f},
                 Shader.TileMode.CLAMP));
         canvas.drawRect(0, 0, width, height, background);
@@ -67,13 +93,22 @@ final class PageFrameLayout extends FrameLayout {
                 band.top,
                 band.right,
                 band.bottom,
-                new int[]{0x00171717, 0x33545454, 0x66ECECEC, 0x00242424},
+                new int[]{
+                        withAlpha(backgroundMiddleColor, 0),
+                        withAlpha(bandGlowColor, 42),
+                        withAlpha(bandGlowColor, 82),
+                        withAlpha(backgroundMiddleColor, 0)
+                },
                 new float[]{0f, 0.34f, 0.55f, 1f},
                 Shader.TileMode.CLAMP));
         canvas.drawRoundRect(band, dp(12), dp(12), plate);
         plate.setShader(null);
 
         canvas.drawText("Last Idea", dp(32), dp(34), label);
+    }
+
+    private int withAlpha(int color, int alpha) {
+        return (color & 0x00FFFFFF) | ((alpha & 0xFF) << 24);
     }
 
     private int dp(int value) {

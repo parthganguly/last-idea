@@ -7,13 +7,18 @@ import android.graphics.Typeface;
 final class AppSettings {
     static final String FONT_DEFAULT = "default";
     static final String FONT_DEATH = "death";
+    static final String FONT_GARAMOND = "garamond";
     static final String FONT_NEAR = "near";
     static final String FONT_RYUK = "ryuk";
     static final String FONT_SERIF = "serif";
     static final String FONT_MONO = "mono";
     static final String FONT_SYSTEM = "system";
+    static final String APPEARANCE_DARK_COLLAGE = "dark_collage";
+    static final String APPEARANCE_PURE_BLACK = "pure_black";
+    static final String APPEARANCE_MINIMAL = "minimal";
 
     private static final String PREFS = "last_idea_settings";
+    private static final String KEY_APPEARANCE_MODE = "appearance_mode";
     private static final String KEY_AUTO_LOCK = "auto_lock";
     private static final String KEY_FONT = "font";
     private static final String KEY_LAST_PAUSE = "last_pause";
@@ -29,6 +34,7 @@ final class AppSettings {
     private final Context context;
     private final SharedPreferences prefs;
     private Typeface deathTypeface;
+    private Typeface garamondTypeface;
     private Typeface nearTypeface;
     private Typeface ryukTypeface;
 
@@ -102,6 +108,14 @@ final class AppSettings {
         prefs.edit().putString(KEY_CURRENT_CATEGORY, category == null ? "" : category).apply();
     }
 
+    String getAppearanceMode() {
+        return prefs.getString(KEY_APPEARANCE_MODE, APPEARANCE_DARK_COLLAGE);
+    }
+
+    void setAppearanceMode(String mode) {
+        prefs.edit().putString(KEY_APPEARANCE_MODE, mode).apply();
+    }
+
     long getLastPauseTime() {
         return prefs.getLong(KEY_LAST_PAUSE, 0L);
     }
@@ -123,7 +137,10 @@ final class AppSettings {
     }
 
     Typeface getTypeface(String font) {
-        if (FONT_DEFAULT.equals(font) || FONT_SYSTEM.equals(font)) {
+        if (FONT_DEFAULT.equals(font) || FONT_GARAMOND.equals(font)) {
+            return assetTypeface("fonts/eb_garamond.ttf", Typeface.SERIF);
+        }
+        if (FONT_SYSTEM.equals(font)) {
             return Typeface.SANS_SERIF;
         }
         if (FONT_DEATH.equals(font)) {
@@ -141,7 +158,7 @@ final class AppSettings {
         if (FONT_SERIF.equals(font)) {
             return Typeface.SERIF;
         }
-        return Typeface.SANS_SERIF;
+        return assetTypeface("fonts/eb_garamond.ttf", Typeface.SERIF);
     }
 
     private Typeface assetTypeface(String path, Typeface fallback) {
@@ -151,6 +168,12 @@ final class AppSettings {
                     deathTypeface = Typeface.createFromAsset(context.getAssets(), path);
                 }
                 return deathTypeface;
+            }
+            if ("fonts/eb_garamond.ttf".equals(path)) {
+                if (garamondTypeface == null) {
+                    garamondTypeface = Typeface.createFromAsset(context.getAssets(), path);
+                }
+                return garamondTypeface;
             }
             if ("fonts/near.ttf".equals(path)) {
                 if (nearTypeface == null) {

@@ -29,7 +29,8 @@ final class MarkdownStore {
     private static final String[] DOC_PROJECTION = {
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-            DocumentsContract.Document.COLUMN_MIME_TYPE
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED
     };
 
     private final AppSettings settings;
@@ -136,7 +137,13 @@ final class MarkdownStore {
         for (File file : files) {
             int page = pageFromName(file.getName());
             if (page > 0) {
-                pages.add(new PageInfo(normalizeCategory(category), page, titleFor(readFile(file))));
+                String markdown = readFile(file);
+                pages.add(new PageInfo(
+                        normalizeCategory(category),
+                        page,
+                        titleFor(markdown),
+                        previewFor(markdown),
+                        file.lastModified()));
             }
         }
         Collections.sort(pages, Comparator.comparingInt(info -> info.page));
@@ -176,19 +183,41 @@ final class MarkdownStore {
         }
         String[] lines = markdown.split("\\r?\\n");
         for (String raw : lines) {
-            String line = raw.trim();
+            String line = cleanPreviewLine(raw);
             if (line.isEmpty()) {
                 continue;
             }
-            while (line.startsWith("#")) {
-                line = line.substring(1).trim();
-            }
-            line = line.replaceFirst("^[-*+]\\s+", "").trim();
             if (!line.isEmpty()) {
                 return line.length() > 30 ? line.substring(0, 30) : line;
             }
         }
         return "Untitled";
+    }
+
+    String previewFor(String markdown) {
+        if (markdown == null) {
+            return "No preview yet";
+        }
+        String title = titleFor(markdown);
+        String[] lines = markdown.split("\\r?\\n");
+        for (String raw : lines) {
+            String line = cleanPreviewLine(raw);
+            if (line.isEmpty() || line.equals(title)) {
+                continue;
+            }
+            return line.length() > 92 ? line.substring(0, 92) + "..." : line;
+        }
+        return "No preview yet";
+    }
+
+    private String cleanPreviewLine(String raw) {
+        String line = raw == null ? "" : raw.trim();
+        while (line.startsWith("#")) {
+            line = line.substring(1).trim();
+        }
+        line = line.replaceFirst("^[-*+]\\s+", "").trim();
+        line = line.replaceAll("\\s+", " ");
+        return line;
     }
 
     private boolean isDrive() {
@@ -355,6 +384,7 @@ final class MarkdownStore {
             int idIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID);
             int nameIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME);
             int mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE);
+            int modifiedIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED);
             while (cursor.moveToNext()) {
                 String name = cursor.getString(nameIndex);
                 if (!isPageName(name) || DIRECTORY_MIME.equals(cursor.getString(mimeIndex))) {
@@ -363,7 +393,13 @@ final class MarkdownStore {
                 int page = pageFromName(name);
                 if (page > 0) {
                     String markdown = readFromUri(documentUri(cursor.getString(idIndex)));
-                    pages.add(new PageInfo(normalizeCategory(category), page, titleFor(markdown)));
+                    long modified = modifiedIndex >= 0 ? cursor.getLong(modifiedIndex) : 0L;
+                    pages.add(new PageInfo(
+                            normalizeCategory(category),
+                            page,
+                            titleFor(markdown),
+                            previewFor(markdown),
+                            modified));
                 }
             }
         } catch (Exception e) {

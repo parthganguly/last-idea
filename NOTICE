@@ -5,3 +5,7 @@ This project does not bundle proprietary app code, legacy ad SDK identifiers,
 network dependencies, plaintext password storage, or rules text from that app.
 The included visual/font assets came from the supplied APK archive and should be
 redistributed only where the project has the rights to do so.
+
+EB Garamond is bundled as the default app font from Google Fonts under the
+SIL Open Font License, Version 1.1. See
+app/src/main/assets/fonts/eb_garamond_OFL.txt.

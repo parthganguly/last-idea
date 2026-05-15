@@ -3,10 +3,10 @@
 Last Idea is an open-source, local-first Android idea catcher built around speed:
 open, type, leave. Every idea is a plain Markdown file, not an opaque database row.
 
-The design keeps the old APK's black-paper/white-ink font/icon assets, then
-modernizes the first screen with a quick typewriter opening and a darker
-liquid-metal finish. The ornate borders and skull treatment were removed from
-the active UI.
+The design keeps the old APK's black-paper/white-ink icon assets, uses
+open-licensed EB Garamond as the default app font, and modernizes the first
+screen with a quick typewriter opening and a darker liquid-metal finish. The
+ornate borders and skull treatment were removed from the active UI.
 
 ## Features
 
@@ -28,7 +28,7 @@ the active UI.
 - Optional password lock with salted PBKDF2 hashing
 - Optional auto-lock after 15 seconds away
 - Screenshot blocking while password protection is enabled
-- Font selector using platform-safe typefaces
+- Font selector with EB Garamond as the default app-wide font
 - No network permission and no ad SDKs
 
 ## Storage
