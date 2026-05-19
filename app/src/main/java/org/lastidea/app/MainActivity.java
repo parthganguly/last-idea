@@ -980,9 +980,9 @@ public final class MainActivity extends Activity {
         applyWindowTheme(colors);
 
         LinearLayout content = vertical();
-        content.addView(row("Wipe ideas", 0, this::confirmWipe, R.drawable.dn_ic_wipe));
-        content.addView(row("Password", 0, this::showPasswordDialog, R.drawable.dn_ic_lock));
-        content.addView(row("Font", 0, this::showFontDialog, R.drawable.dn_ic_font));
+        content.addView(row("Wipe ideas", 0, this::confirmWipe, R.drawable.ic_trash));
+        content.addView(row("Password", 0, this::showPasswordDialog, R.drawable.ic_lock));
+        content.addView(row("Font", 0, this::showFontDialog, R.drawable.ic_text));
         content.addView(row("Appearance", 0, this::showAppearanceDialog));
         content.addView(row("Storage", 0, this::showStorageDialog));
 
@@ -1054,13 +1054,10 @@ public final class MainActivity extends Activity {
     }
 
     private void showFontDialog() {
-        String[] labels = {"Garamond", "System", "Death", "Near", "Ryuk", "Serif", "Monospace"};
+        String[] labels = {"EB Garamond", "System", "Serif", "Monospace"};
         String[] values = {
                 AppSettings.FONT_DEFAULT,
                 AppSettings.FONT_SYSTEM,
-                AppSettings.FONT_DEATH,
-                AppSettings.FONT_NEAR,
-                AppSettings.FONT_RYUK,
                 AppSettings.FONT_SERIF,
                 AppSettings.FONT_MONO
         };

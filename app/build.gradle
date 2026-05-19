@@ -2,16 +2,49 @@ plugins {
     id "com.android.application"
 }
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { stream ->
+        localProperties.load(stream)
+    }
+}
+
+def releaseStoreFile = localProperties.getProperty("lastIdea.upload.storeFile")
+def releaseStorePassword = localProperties.getProperty("lastIdea.upload.storePassword")
+def releaseKeyAlias = localProperties.getProperty("lastIdea.upload.keyAlias")
+def releaseKeyPassword = localProperties.getProperty("lastIdea.upload.keyPassword")
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+
 android {
     namespace "org.lastidea.app"
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "org.lastidea.app"
         minSdk 26
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "0.1.0"
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
     }
 
     compileOptions {

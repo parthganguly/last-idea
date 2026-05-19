@@ -6,10 +6,7 @@ import android.graphics.Typeface;
 
 final class AppSettings {
     static final String FONT_DEFAULT = "default";
-    static final String FONT_DEATH = "death";
     static final String FONT_GARAMOND = "garamond";
-    static final String FONT_NEAR = "near";
-    static final String FONT_RYUK = "ryuk";
     static final String FONT_SERIF = "serif";
     static final String FONT_MONO = "mono";
     static final String FONT_SYSTEM = "system";
@@ -33,10 +30,7 @@ final class AppSettings {
 
     private final Context context;
     private final SharedPreferences prefs;
-    private Typeface deathTypeface;
     private Typeface garamondTypeface;
-    private Typeface nearTypeface;
-    private Typeface ryukTypeface;
 
     AppSettings(Context context) {
         this.context = context.getApplicationContext();
@@ -143,15 +137,6 @@ final class AppSettings {
         if (FONT_SYSTEM.equals(font)) {
             return Typeface.SANS_SERIF;
         }
-        if (FONT_DEATH.equals(font)) {
-            return assetTypeface("fonts/death.ttf", Typeface.SANS_SERIF);
-        }
-        if (FONT_NEAR.equals(font)) {
-            return assetTypeface("fonts/near.ttf", Typeface.SERIF);
-        }
-        if (FONT_RYUK.equals(font)) {
-            return assetTypeface("fonts/ryuk.ttf", Typeface.SERIF);
-        }
         if (FONT_MONO.equals(font)) {
             return Typeface.MONOSPACE;
         }
@@ -163,29 +148,11 @@ final class AppSettings {
 
     private Typeface assetTypeface(String path, Typeface fallback) {
         try {
-            if ("fonts/death.ttf".equals(path)) {
-                if (deathTypeface == null) {
-                    deathTypeface = Typeface.createFromAsset(context.getAssets(), path);
-                }
-                return deathTypeface;
-            }
             if ("fonts/eb_garamond.ttf".equals(path)) {
                 if (garamondTypeface == null) {
                     garamondTypeface = Typeface.createFromAsset(context.getAssets(), path);
                 }
                 return garamondTypeface;
-            }
-            if ("fonts/near.ttf".equals(path)) {
-                if (nearTypeface == null) {
-                    nearTypeface = Typeface.createFromAsset(context.getAssets(), path);
-                }
-                return nearTypeface;
-            }
-            if ("fonts/ryuk.ttf".equals(path)) {
-                if (ryukTypeface == null) {
-                    ryukTypeface = Typeface.createFromAsset(context.getAssets(), path);
-                }
-                return ryukTypeface;
             }
             return Typeface.createFromAsset(context.getAssets(), path);
         } catch (RuntimeException e) {
