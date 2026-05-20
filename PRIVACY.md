@@ -43,4 +43,4 @@ verification happens on your device.
 
 If you have questions about this privacy policy, contact:
 
-<ribhuganguly96@gmail.com>
+ribhuganguly96@gmail.com
